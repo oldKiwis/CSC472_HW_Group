@@ -119,21 +119,23 @@ HW3a::paintGL()
 {
 	// clear canvas with background color
 	glClear(GL_COLOR_BUFFER_BIT);
+	// Debugging tests with these lines
+	qDebug() << "numPoints:" << m_numPoints;
+	qDebug() << "texture:" << m_texture;
 
 	// bind vertex buffer to the GPU; enable buffer to be copied to the
 	// attribute vertex variable and specify data format
 	// PUT YOUR CODE HERE
 	glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(ATTRIB_VERTEX);
+	glVertexAttribPointer(ATTRIB_VERTEX, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
 	// bind texture coord buffer to the GPU; enable buffer to be copied to the
 	// attribute texture coordinate variable and specify data format
 	// PUT YOUR CODE HERE
-
 	glBindBuffer(GL_ARRAY_BUFFER, m_texBuffer);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(ATTRIB_TEXCOORD);
+	glVertexAttribPointer(ATTRIB_TEXCOORD, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
 	// use texture glsl program
 	// PUT YOUR CODE HERE
@@ -142,20 +144,16 @@ HW3a::paintGL()
 	// pass parameters to vertex shader
 	// PUT YOUR CODE HERE
 	glUniformMatrix4fv(m_uniform[TEXTURE][MV],   1, GL_FALSE, m_modelview.constData());
-	glUniformMatrix4fv(m_uniform[TEXTURE][PROJ], 1, GL_FALSE, m_projection.constData());
+	glUniformMatrix4fv(m_uniform[TEXTURE][PROJ],  1, GL_FALSE, m_projection.constData());
 	glUniform1f(m_uniform[TEXTURE][THETA], m_theta);
-	glUniform1i(m_uniform[TEXTURE][TWIST], m_twist);
+	glUniform1i(m_uniform[TEXTURE][TWIST], m_twist ? 1 : 0);
 	glUniform1i(m_uniform[TEXTURE][SAMPLER], 0);
-
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_texture);
 
-
 	// draw texture mapped triangles
 	// PUT YOUR CODE HERE
-	for (int i = 0; i < m_numPoints; i += 3) {
-    glDrawArrays(GL_LINE_LOOP, i, 3);
-}
+	glDrawArrays(GL_TRIANGLES, 0, m_numPoints);
 
 	glLineWidth(1.5f);
 
@@ -163,16 +161,15 @@ HW3a::paintGL()
 	if(m_wire) {
 		// PUT YOUR CODE HERE
 		glUseProgram(m_program[WIREFRAME].programId());
-
 		glUniformMatrix4fv(m_uniform[WIREFRAME][MV],   1, GL_FALSE, m_modelview.constData());
-		glUniformMatrix4fv(m_uniform[WIREFRAME][PROJ], 1, GL_FALSE, m_projection.constData());
+		glUniformMatrix4fv(m_uniform[WIREFRAME][PROJ],  1, GL_FALSE, m_projection.constData());
 		glUniform1f(m_uniform[WIREFRAME][THETA], m_theta);
-		glUniform1i(m_uniform[WIREFRAME][TWIST], m_twist);
-
-		for (int i = 0; i < m_numPoints; i += 3) {
-    		glDrawArrays(GL_LINE_LOOP, i, 3);
-		}
+		glUniform1i(m_uniform[WIREFRAME][TWIST], m_twist ? 1 : 0);
+		for(int i = 0; i < m_numPoints; i += 3)
+			glDrawArrays(GL_LINE_LOOP, i, 3);
 	}
+
+	glUseProgram(0);
 }
 
 
@@ -333,7 +330,6 @@ HW3a::initTexture()
 void
 HW3a::initShaders()
 {
-
 	UniformMap uniforms;
 
 	// init uniform hash table based on uniform variable names and location IDs
@@ -367,7 +363,6 @@ HW3a::initShaders()
 void
 HW3a::initVertexBuffer()
 {
-
 	// init geometry data
 	const vec2 vertices[] = {
 		vec2( 0.0f,   0.75f ),
@@ -379,13 +374,15 @@ HW3a::initVertexBuffer()
 	divideTriangle(vertices[0], vertices[1], vertices[2], m_subdivisions);
 	m_numPoints = (int) m_points.size();
 
+	// bind vertex buffer to GPU and copy vertices
 	glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer);
-	glBufferData(GL_ARRAY_BUFFER, m_numPoints * sizeof(vec2), &m_points[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, m_numPoints*sizeof(vec2), &m_points[0], GL_STATIC_DRAW);
 
+	// bind texture coord buffer to GPU and copy coords
 	glBindBuffer(GL_ARRAY_BUFFER, m_texBuffer);
-	glBufferData(GL_ARRAY_BUFFER, m_coords.size() * sizeof(vec2), &m_coords[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, m_numPoints*sizeof(vec2), &m_coords[0], GL_STATIC_DRAW);
 
-	// clear previous data
+	// clear vectors as they have been copied to GPU
 	m_points.clear();
 	m_coords.clear();
 }
@@ -401,7 +398,6 @@ void
 HW3a::divideTriangle(vec2 a, vec2 b, vec2 c, int count)
 {
 	// PUT YOUR CODE HERE
-	//same code from HW2b
 	if(count > 0) {
 		vec2 ab = vec2((a[0]+b[0])/2.0f, (a[1]+b[1])/2.0f);
 		vec2 ac = vec2((a[0]+c[0])/2.0f, (a[1]+c[1])/2.0f);
@@ -528,3 +524,4 @@ HW3a::changeWire(int wire)
 	// redraw with new wire flag
 	updateGL();
 }
+
