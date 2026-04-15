@@ -119,10 +119,7 @@ HW3a::paintGL()
 {
 	// clear canvas with background color
 	glClear(GL_COLOR_BUFFER_BIT);
-	// Debugging tests with these lines
-	qDebug() << "numPoints:" << m_numPoints;
-	qDebug() << "texture:" << m_texture;
-
+	
 	// bind vertex buffer to the GPU; enable buffer to be copied to the
 	// attribute vertex variable and specify data format
 	// PUT YOUR CODE HERE
